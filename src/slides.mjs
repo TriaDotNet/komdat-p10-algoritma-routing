@@ -23,7 +23,7 @@ function slide(id, ch, title, pages, icon, body, kind = '') {
   };
 }
 
-const presenters = [['Ilham Oktorian', 'NIM 1102411030'], ['Hamit Sarif Zaki', 'NIM 1102411030']];
+const presenters = [['Ilham Oktorian', 'NIM 1102411030'], ['Hamit Sarif Zaki', 'NIM 1102411050']];
 function cover() {
   const scene = `<div class="cover-scene">${coverArt()}<div class="cover-copy"><p class="chip chip-cover r"><b>10</b>Komunikasi Data, pertemuan 10</p><h1 class="cover-title"><span class="line"><span class="r-line">Algoritma</span></span><span class="line"><span class="r-line grad">Routing</span></span></h1><p class="cover-sub r">Bab X</p><ul class="presenters r">${presenters.map(([n, id]) => `<li><span>${n}</span><span>${id}</span></li>`).join('')}</ul></div></div>`;
   return `<div class="cover">${scene}<div class="lens" aria-hidden="true"><div class="lens-back"></div><div class="lens-optics"><div class="lens-mag"><div class="lens-clone"></div></div></div><div class="lens-rim"></div><div class="lens-glint"></div></div><p class="cover-hint r">Seret lensa kaca. Tekan panah kanan untuk mulai.</p></div>`;
