@@ -829,3 +829,7 @@ td:first-child{font-weight:650;color:var(--ink);white-space:nowrap}
 .tag-bad rect{fill:var(--bad);stroke:none}
 .tag-bad text{fill:#fff}
 .die circle{transition:opacity .08s linear}
+/* short Dijkstra steps: larger, statement-style type */
+.numlist:not(.numlist-1) li{padding:34px 0;gap:30px}
+.numlist:not(.numlist-1) .num{width:84px;font-size:84px}
+.numlist:not(.numlist-1) p{font-size:40px;font-weight:620;letter-spacing:-.022em;line-height:1.22}

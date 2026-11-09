@@ -104,13 +104,13 @@ export function buildSlides() {
 
     slide('dijkstra-langkah', 'D', 'Langkah kerja Dijkstra', '4', 'list',
       `<ol class="numlist r">${[
-        'Inisialisasi jarak semua node ke tak hingga (∞), kecuali node asal yang diatur ke 0.',
-        'Tandai semua node sebagai belum dikunjungi.',
-        'Pilih node dengan jarak terkecil dari yang belum dikunjungi, lalu kunjungi semua tetangganya.',
-        'Jika ditemukan jalur lebih pendek ke tetangga tersebut, perbarui jaraknya.',
-        'Tandai node tersebut sebagai sudah dikunjungi.',
-        'Ulangi proses ini hingga semua node telah dikunjungi.'
-      ].map((t, i) => `<li><span class="num">${i + 1}</span><p>${t}</p></li>`).join('')}</ol>` +
+        'Jarak node asal = 0, node lain = ∞.',
+        'Tandai semua node belum dikunjungi.',
+        'Pilih node berjarak terkecil, kunjungi tetangganya.',
+        'Perbarui jarak jika ada jalur lebih pendek.',
+        'Tandai node sebagai sudah dikunjungi.',
+        'Ulangi hingga semua node dikunjungi.'
+      ].map((t, i) => `<li><span class="num" aria-hidden="true">${i + 1}</span><p>${t}</p></li>`).join('')}</ol>` +
       `<p class="result-bar r">${ico('check')}<span><strong>Hasil akhir:</strong> jalur terpendek dari node sumber ke setiap node lain dalam jaringan.</span></p>`),
 
     slide('dijkstra-contoh', 'D', 'Contoh Dijkstra', '5', 'graph',
