@@ -658,7 +658,167 @@ function pvScene(svg) {
     setO(q('cap1'), 1 - c2); setO(q('cap2'), c2 * fadeAll);
   };
 }
-const SCENE_FN = { statis: sdScene, dinamis: sdScene, dv: dvScene, ls: lsScene, pv: pvScene };
+// ---------- worked-example scenes: each follows the steps in the PDF ------------------------
+// Shared kit: edges draw themselves, nodes light up, distance badges pop, the step rows on the
+// right of the slide light up in sync, and a packet finally runs the winning route.
+function exampleKit(svg) {
+  const q = k => svg.querySelector(`[data-k="${k}"]`);
+  const slide = svg.closest('.slide');
+  const rows = slide ? [...slide.querySelectorAll('.trail li')] : [];
+  const answer = slide?.querySelector('.answer'), matrix = slide?.querySelector('.matrix');
+  const lens = {};
+  svg.querySelectorAll('[data-k^="h-"]').forEach(el => { lens[el.dataset.k] = el.getTotalLength(); });
+  const route = q('route'), rl = route ? route.getTotalLength() : 0, pk = q('pk');
+  let fade = 1;
+  const kit = {
+    q, rows, answer, matrix,
+    setFade(v) { fade = v; },
+    // draw an edge overlay starting at a; optional dim (0..1) at time dimAt
+    edge(t, k, a, d = .75, dimAt = null, dimTo = .15) {
+      const el = q('h-' + k); if (!el) return 0;
+      const v = ease.io(ramp(t, a, d));
+      drawLine(el, lens['h-' + k], v);
+      const dim = dimAt == null ? 1 : 1 - (1 - dimTo) * ease.io(ramp(t, dimAt, .5));
+      setO(el, (v > 0 ? 1 : 0) * dim * fade);
+      const head = q('hh-' + k); if (head) setO(head, ease.io(ramp(t, a + d * .8, .2)) * dim * fade);
+      q('w-' + k)?.classList.toggle('wpill-hot', v > .5 && dim > .5 && fade > .5);
+      return v;
+    },
+    lit(t, n, a) { setO(q('on-' + n), ease.out(ramp(t, a, .35)) * fade); pulseRing(q('r-' + n), t, a, 38, 26); },
+    badge(t, k, a, outAt = null) {
+      const el = q('d-' + k); if (!el) return;
+      const v = ease.back(ramp(t, a, .5)) * (outAt == null ? 1 : 1 - ease.io(ramp(t, outAt, .35)));
+      setO(el, clamp01(v) * fade);
+      const base = el.getAttribute('transform').replace(/ scale\([^)]*\)/, '');
+      el.setAttribute('transform', `${base} scale(${Math.max(.001, v).toFixed(3)})`);
+    },
+    // rows: the active step is lit, finished steps stay softly marked
+    steps(t, starts) {
+      rows.forEach((li, i) => {
+        const on = t >= starts[i] && (i === starts.length - 1 || t < starts[i + 1]) && fade > .5;
+        li.classList.toggle('on', on);
+        li.classList.toggle('done', !on && t >= starts[i] && fade > .5);
+      });
+    },
+    packet(t, a, d) {
+      if (!route || !pk) return;
+      const f = ease.io(ramp(t, a, d));
+      placeComet(pk, x => { const p = route.getPointAtLength(x * rl); return [p.x, p.y]; }, f, f > 0 && f < 1 ? Math.min(1, f * 10, (1 - f) * 10) * fade : 0);
+    },
+    glow(on) { answer?.classList.toggle('lit', on && fade > .5); }
+  };
+  return kit;
+}
+function exDijkstraScene(svg) {
+  const k = exampleKit(svg), T = 10.5;
+  return tAbs => {
+    const t = reduce.matches ? 7.5 : tAbs % T;
+    k.setFade(1 - ease.io(ramp(t, T - .9, .6)));
+    k.lit(t, 'A', .2); k.badge(t, 'A', .3);
+    k.edge(t, 'AB', 1.0); k.lit(t, 'B', 1.75); k.badge(t, 'B', 1.8);
+    k.edge(t, 'BC', 2.8); k.lit(t, 'C', 3.55); k.badge(t, 'C', 3.6);
+    k.edge(t, 'CD', 4.6); k.lit(t, 'D', 5.35); k.badge(t, 'D', 5.4);
+    k.steps(t, [1.0, 2.8, 4.6]);
+    k.packet(t, 6.2, 2.0);
+    k.glow(t > 6.2);
+  };
+}
+function exBellmanScene(svg) {
+  const k = exampleKit(svg), T = 10.5;
+  return tAbs => {
+    const t = reduce.matches ? 7.5 : tAbs % T;
+    k.setFade(1 - ease.io(ramp(t, T - .9, .6)));
+    k.lit(t, 'A', .2); k.badge(t, 'A', .3);
+    // langkah 1: A → B = 4 and A → C = 5
+    k.edge(t, 'AB', 1.0); k.edge(t, 'AC', 1.0, .75, 4.0);
+    k.lit(t, 'B', 1.75); k.badge(t, 'B', 1.8);
+    k.badge(t, 'C5', 1.8, 4.0); k.lit(t, 'C', 1.75);
+    // langkah 2: B → C = 4 + (−2) = 2, shorter than 5, so C is updated
+    k.edge(t, 'BC', 3.2);
+    k.badge(t, 'C2', 4.1); pulseRing(k.q('r-C'), t, 4.05, 38, 30);
+    k.steps(t, [1.0, 3.2]);
+    k.packet(t, 5.2, 1.8);
+    k.glow(t > 5.2);
+  };
+}
+function exFloydScene(svg) {
+  const k = exampleKit(svg), T = 10.5;
+  return tAbs => {
+    const t = reduce.matches ? 7.5 : tAbs % T;
+    k.setFade(1 - ease.io(ramp(t, T - .9, .6)));
+    k.lit(t, 'A', .2); k.badge(t, 'A', .3);
+    // langsung A → C = 10
+    k.edge(t, 'AC', 1.0, .8, 4.7); k.lit(t, 'C', 1.8); k.badge(t, 'C10', 1.85, 4.7);
+    // lewat B: A → B → C = 3 + 2 = 5, with B as the intermediate node k
+    k.lit(t, 'B', 3.0); k.badge(t, 'B', 3.1);
+    k.edge(t, 'AB', 3.2, .6); k.edge(t, 'BC', 3.8, .6);
+    k.badge(t, 'C5', 4.75); pulseRing(k.q('r-C'), t, 4.7, 38, 30);
+    k.steps(t, [1.0, 3.0]);
+    const fadeOn = t < T - .9;
+    k.matrix?.classList.toggle('k-on', t > 3.0 && fadeOn);
+    k.matrix?.classList.toggle('upd-on', t > 4.7 && fadeOn);
+    k.packet(t, 5.6, 1.6);
+    k.glow(t > 5.6);
+  };
+}
+// Flooding: wave by wave, every node forwards copies to all links except the one it came from.
+function floodScene(svg) {
+  const q = k => svg.querySelector(`[data-k="${k}"]`), n = JSON.parse(svg.dataset.geo), T = 6.4;
+  const waves = [
+    [.5, [['A', 'B'], ['A', 'C']]],
+    [1.7, [['B', 'D'], ['C', 'E'], ['B', 'C'], ['C', 'B']]],
+    [2.9, [['D', 'F'], ['E', 'F'], ['D', 'E'], ['E', 'D']]]
+  ];
+  const hops = []; waves.forEach(([t0, list]) => list.forEach(([a, b]) => hops.push([t0, a, b])));
+
+  return tAbs => {
+    const t = reduce.matches ? 4.4 : tAbs % T, fade = 1 - ease.io(ramp(t, T - .8, .5));
+    pulseRing(q('r-A'), t, .25, 30, 22);
+    hops.forEach(([t0, a, b], i) => {
+      // links light up in their drawn direction; return copies (C→B, E→D) are just packets
+      const f = ease.io(ramp(t, t0, .9)), h = q('h-' + a + b);
+      if (h) { drawLine(h, Math.hypot(n[b][0] - n[a][0], n[b][1] - n[a][1]), f); setO(h, (f > 0 ? .85 : 0) * fade); }
+      const p = q('p' + i), pt = lerpP(n[a], n[b], f);
+      p.setAttribute('cx', pt[0].toFixed(2)); p.setAttribute('cy', pt[1].toFixed(2));
+      setO(p, f > 0 && f < 1 ? fade : 0);
+      if (b !== 'A') { pulseRing(q('r-' + b), t, t0 + .9, 24, 18); setO(q('on-' + b), ease.out(ramp(t, t0 + .85, .3)) * fade); }
+    });
+    const dv = ease.back(ramp(t, 3.85, .45)) * fade, dup = q('dup');
+    setO(dup, clamp01(dv)); dup.setAttribute('transform', `translate(500 214) scale(${Math.max(.001, dv).toFixed(3)}) translate(-500 -214)`);
+    const c2 = ease.io(ramp(t, 1.6, .4));
+    setO(q('cap1'), (1 - c2) * (t < .2 ? ease.io(ramp(t, 0, .2)) : 1)); setO(q('cap2'), c2 * fade);
+  };
+}
+// Random routing: each round the die tumbles, then A forwards to whichever neighbour it picked.
+function randomScene(svg) {
+  const q = k => svg.querySelector(`[data-k="${k}"]`), { A, N } = JSON.parse(svg.dataset.geo), R = 3.4;
+  const names = Object.keys(N), die = q('die'), pk = q('pk');
+  const faces = { 1: [2], 2: [0, 4], 3: [0, 2, 4], 4: [0, 1, 3, 4], 5: [0, 1, 2, 3, 4], 6: [0, 1, 3, 4, 5, 6] };
+  const pickFor = c => { const seq = [1, 2, 0, 2, 1, 0, 1, 0, 2]; return seq[c % seq.length]; };   // varied, never boring
+  const lens = Object.fromEntries(names.map(k => [k, Math.hypot(N[k][0] - A[0], N[k][1] - A[1])]));
+  return tAbs => {
+    const c = reduce.matches ? 0 : Math.floor(tAbs / R), t = reduce.matches ? 2.2 : tAbs % R, pick = names[pickFor(c)];
+    // tumble: a fast spin that settles with a spring-like ease
+    const roll = ease.out(ramp(t, 0, .9));
+    die.setAttribute('transform', `translate(250 214) rotate(${(-12 + (1 - roll) * 540).toFixed(1)}) scale(${(1 + .18 * Math.sin(Math.PI * roll)).toFixed(3)})`);
+    const face = roll < 1 ? 1 + Math.floor((t * 14) % 6) : pickFor(c) + 1;
+    for (let i = 0; i < 7; i++) q('pip' + i).style.opacity = faces[face].includes(i) ? 1 : 0;
+    const pv = ease.back(ramp(t, .9, .4)) * (1 - ease.io(ramp(t, R - .45, .3)));
+    const tagEl = q('pick'); setO(tagEl, clamp01(pv));
+    tagEl.setAttribute('transform', `translate(290 104) scale(${Math.max(.001, pv).toFixed(3)}) translate(-290 -104)`);
+    names.forEach(k => {
+      const on = k === pick, d = on ? ease.io(ramp(t, 1.0, .5)) : 0, out = 1 - ease.io(ramp(t, R - .45, .3));
+      drawLine(q('h-' + k), lens[k], d); setO(q('h-' + k), (d > 0 ? 1 : 0) * out);
+      setO(q('on-' + k), on ? ease.out(ramp(t, 2.25, .25)) * out : 0);
+      if (on) pulseRing(q('r-' + k), t, 2.25, 26, 20); else setO(q('r-' + k), 0);
+    });
+    const f = ease.io(ramp(t, 1.25, 1.0)), P2 = N[pick];
+    pk.setAttribute('cx', (A[0] + (P2[0] - A[0]) * f).toFixed(2)); pk.setAttribute('cy', (A[1] + (P2[1] - A[1]) * f).toFixed(2));
+    setO(pk, f > 0 && f < 1 ? 1 : 0);
+  };
+}
+const SCENE_FN = { statis: sdScene, dinamis: sdScene, dv: dvScene, ls: lsScene, pv: pvScene,
+  'ex-dijkstra': exDijkstraScene, 'ex-bellman': exBellmanScene, 'ex-floyd': exFloydScene, flooding: floodScene, random: randomScene };
 
 const scenes = [];
 let sceneRaf = 0;

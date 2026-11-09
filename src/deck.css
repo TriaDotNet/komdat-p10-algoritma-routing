@@ -793,3 +793,39 @@ td:first-child{font-weight:650;color:var(--ink);white-space:nowrap}
 .dbtn .mo-off{opacity:0;transition:opacity .25s ease}
 :root[data-motion="off"] .dbtn .mo-off{opacity:1}
 :root[data-motion="off"] .dbtn .mo-wave{opacity:.45}
+
+/* ===== Animated worked examples ============================================ */
+.ex-hot{stroke:var(--accent);stroke-width:8;stroke-linecap:round;fill:none}
+.ex-hot.e-neg{stroke:var(--neg)}
+.ex-head{fill:var(--edge)}
+.ex-head-hot{fill:var(--accent)}
+.ex-head-hot.neg{fill:var(--neg)}
+.ex-art .gn,.ex-art .dbadge{transform-box:fill-box;transform-origin:center}
+.dbadge rect{fill:var(--node);stroke:var(--accent);stroke-width:2.5;filter:drop-shadow(0 8px 14px var(--shade))}
+.dbadge text{font:750 22px var(--sans);fill:var(--accent);text-anchor:middle;dominant-baseline:central;font-variant-numeric:tabular-nums}
+.dbadge-new rect{fill:var(--accent);stroke:none}
+.dbadge-new text{fill:#fff}
+.wpill rect,.wpill text{transition:fill .35s ease,stroke .35s ease}
+/* step rows follow the animation */
+.trail li{transition:color .35s ease,background-color .35s ease,padding .45s cubic-bezier(.16,1,.3,1);border-radius:16px}
+.trail li.on{background:color-mix(in srgb,var(--accent) 12%,transparent);padding-left:18px;padding-right:12px}
+.trail li.on span{font-weight:650}
+.trail li.done span{color:var(--ink-2)}
+.trail li.on em{background:var(--accent);color:#fff}
+.answer{transition:filter .5s ease}
+.answer .big{transition:transform .6s cubic-bezier(.16,1,.3,1)}
+.answer.lit .big{transform:scale(1.06);filter:drop-shadow(0 10px 30px color-mix(in srgb,var(--accent) 45%,transparent))}
+/* Floyd matrix: intermediate row/column and the updated cell react to the animation */
+.matrix .cell{transition:background-color .4s ease,box-shadow .4s ease,color .3s ease}
+.matrix .via{background:var(--fill-strong)}
+.matrix.k-on .via{background:color-mix(in srgb,var(--accent) 18%,var(--fill-strong));box-shadow:inset 0 0 0 1.5px color-mix(in srgb,var(--accent) 40%,transparent)}
+.matrix .upd{position:relative;color:var(--ink-2);background:var(--fill-strong);box-shadow:inset 0 0 0 1px var(--rim-low)}
+.matrix .upd i{font-style:normal;transition:opacity .35s ease,transform .5s cubic-bezier(.16,1,.3,1),font-size .4s ease}
+.matrix .upd .new{position:absolute;opacity:0;transform:scale(.5);font-weight:760}
+.matrix.upd-on .upd{color:#fff;background:linear-gradient(135deg,var(--accent-2),var(--accent));box-shadow:0 10px 20px -10px var(--accent)}
+.matrix.upd-on .upd .old{position:absolute;top:5px;right:10px;font-size:15px;opacity:.75;text-decoration:line-through}
+.matrix.upd-on .upd .new{position:static;opacity:1;transform:none}
+/* flooding / random */
+.tag-bad rect{fill:var(--bad);stroke:none}
+.tag-bad text{fill:#fff}
+.die circle{transition:opacity .08s linear}

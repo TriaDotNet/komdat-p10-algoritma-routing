@@ -248,23 +248,35 @@ export const diagrams = {
       .map((c, i) => `<text data-k="cap${i + 1}" x="280" y="304" class="sd-cap${i ? ' sd-cap-alt' : ''}" opacity="${i ? 0 : 1}">${c}</text>`).join('');
     return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="${BOX}" class="dia" data-scene="pv" data-geo='${JSON.stringify({ xs, y })}' aria-hidden="true" focusable="false">${g}</svg>`;
   },
+  // flooding: copies go out on every link except back the way they came (timing in deck.js)
   flooding() {
-    const n = { A: [80, 160], B: [220, 64], C: [220, 256], D: [380, 64], E: [380, 256], F: [500, 160] };
-    let g = `<circle cx="80" cy="160" r="90" class="ring"/><circle cx="80" cy="160" r="160" class="ring ring-2"/>`;
-    for (const [a, b] of [['A', 'B'], ['A', 'C']]) g += arrow(n[a], n[b], 'e e-hot', 30);
-    for (const [a, b] of [['B', 'D'], ['C', 'E'], ['D', 'F'], ['E', 'F'], ['B', 'C'], ['D', 'E']]) g += arrow(n[a], n[b], 'e e-soft', 24);
-    g += pulse(n.A, 30);
-    for (const k in n) g += node(n[k], k, { key: k === 'A', r: k === 'A' ? 30 : 24 });
-    return svg(g, BOX, 'dia');
+    const n = { A: [80, 150], B: [220, 54], C: [220, 246], D: [380, 54], E: [380, 246], F: [500, 150] };
+    const E = [['A', 'B'], ['A', 'C'], ['B', 'C'], ['B', 'D'], ['C', 'E'], ['D', 'E'], ['D', 'F'], ['E', 'F']];
+    let g = '';
+    E.forEach(([a, b]) => g += edge(n[a], n[b], 'e e-soft'));
+    E.forEach(([a, b]) => g += `<line data-k="h-${a}${b}" x1="${n[a][0]}" y1="${n[a][1]}" x2="${n[b][0]}" y2="${n[b][1]}" class="e e-hot" opacity="0"/>`);
+    for (let i = 0; i < 10; i++) g += `<circle data-k="p${i}" r="8" class="pk-head" opacity="0"/>`;
+    Object.entries(n).forEach(([k, p]) => g += `<circle data-k="r-${k}" cx="${p[0]}" cy="${p[1]}" r="24" class="ring-pulse" opacity="0"/>`);
+    Object.entries(n).forEach(([k, p]) => g += node(p, k, { key: k === 'A', r: k === 'A' ? 30 : 24 }) + (k === 'A' ? '' : `<g data-k="on-${k}" opacity="0">${node(p, k, { key: true, r: 24 })}</g>`));
+    g += `<g data-k="dup" opacity="0">${tag(500, 214, 'duplikat ×2', 'tag-bad')}</g>`;
+    g += ['Paket disalin ke semua arah, kecuali arah asal', 'Salinan terus menyebar dan berlipat ganda']
+      .map((c, i) => `<text data-k="cap${i + 1}" x="280" y="304" class="sd-cap${i ? ' sd-cap-alt' : ''}" opacity="${i ? 0 : 1}">${c}</text>`).join('');
+    return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="${BOX}" class="dia" data-scene="flooding" data-geo='${JSON.stringify(n)}' aria-hidden="true" focusable="false">${g}</svg>`;
   },
+  // random: a die picks one neighbour each round (timing in deck.js)
   random() {
-    const A = [100, 160], N = { B: [440, 56], C: [480, 160], D: [440, 264] };
-    let g = edge(A, N.B, 'e e-soft') + edge(A, N.D, 'e e-soft') + arrow(A, N.C, 'e e-hot', 34);
-    g += tag(290, 120, 'acak', 'tag-hot');
-    g += `<g class="die" transform="translate(250 196) rotate(-12)"><rect x="-26" y="-26" width="52" height="52" rx="14"/><circle cx="-11" cy="-11" r="4.5"/><circle cx="0" cy="0" r="4.5"/><circle cx="11" cy="11" r="4.5"/></g>`;
-    for (const k in N) g += node(N[k], k, { r: 26 });
+    const A = [100, 150], N = { B: [440, 46], C: [480, 150], D: [440, 254] };
+    let g = '';
+    for (const k in N) g += edge(A, N[k], 'e e-soft');
+    for (const k in N) g += `<line data-k="h-${k}" x1="${A[0]}" y1="${A[1]}" x2="${N[k][0]}" y2="${N[k][1]}" class="e e-hot" opacity="0"/>`;
+    g += `<circle data-k="pk" r="9" class="pk-head" opacity="0"/>`;
+    for (const k in N) g += `<circle data-k="r-${k}" cx="${N[k][0]}" cy="${N[k][1]}" r="26" class="ring-pulse" opacity="0"/>`;
+    g += `<g data-k="die" class="die" transform="translate(250 214)"><rect x="-26" y="-26" width="52" height="52" rx="14"/>${[[-11, -11], [11, -11], [0, 0], [-11, 11], [11, 11], [-11, 0], [11, 0]].map(([x, y], i) => `<circle data-k="pip${i}" cx="${x}" cy="${y}" r="4.5"/>`).join('')}</g>`;
+    for (const k in N) g += node(N[k], k, { r: 26 }) + `<g data-k="on-${k}" opacity="0">${node(N[k], k, { key: true, r: 26 })}</g>`;
     g += node(A, 'A', { key: true, r: 34 });
-    return svg(g, BOX, 'dia');
+    g += `<g data-k="pick" opacity="0">${tag(290, 104, 'acak', 'tag-hot')}</g>`;
+    g += `<text data-k="cap1" x="280" y="304" class="sd-cap">Setiap pengiriman, A memilih tetangga secara acak</text>`;
+    return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="${BOX}" class="dia" data-scene="random" data-geo='${JSON.stringify({ A, N })}' aria-hidden="true" focusable="false">${g}</svg>`;
   }
 };
 export const diagram = id => `<figure class="dia-fig">${diagrams[id]()}<figcaption>Ilustrasi</figcaption></figure>`;
@@ -294,27 +306,45 @@ export function coverArt() {
   return svg(g, '0 0 1920 1080', 'cover-art');
 }
 
-// ---------- worked examples (static) -------------------------------------------
+// ---------- worked examples (animated step by step, timing in deck.js) ----------------
+// Hooks: h-XY = route overlay for edge X→Y, w-XY = weight pill, on-X = node lit,
+// r-X = pulse ring, d-X / d-X<value> = distance badge, route = packet path, pk = packet.
 export function exampleGraph(kind) {
   const nodes = kind === 'dijkstra' ? [['A', 300, 56], ['B', 110, 200], ['C', 490, 200], ['D', 300, 344]] : [['A', 80, 300], ['B', 300, 80], ['C', 520, 300]];
   const edges = kind === 'dijkstra' ? [['A', 'B', 2], ['A', 'C', 4], ['B', 'C', 1], ['B', 'D', 3], ['C', 'D', 2]] : kind === 'bellman' ? [['A', 'B', 4], ['A', 'C', 5], ['B', 'C', -2]] : [['A', 'B', 3], ['A', 'C', 10], ['B', 'C', 2]];
   const route = kind === 'dijkstra' ? ['A', 'B', 'C', 'D'] : ['A', 'B', 'C'];
+  const badges = {
+    dijkstra: [['A', '0', 64, 0], ['B', '2', 0, 66], ['C', '3', 0, 66], ['D', '5', 64, 0]],
+    bellman: [['A', '0', 0, 66], ['B', '4', 66, 0], ['C5', '5', 0, 66], ['C2', '2', 0, 66]],
+    floyd: [['A', '0', 0, 66], ['B', '3', 66, 0], ['C10', '10', 0, 66], ['C5', '5', 0, 66]]
+  }[kind];
   const pos = Object.fromEntries(nodes.map(([n, x, y]) => [n, [x, y]]));
-  const onRoute = (a, b) => { const i = route.indexOf(a); return i > -1 && route[i + 1] === b; };
+  const directed = kind === 'bellman';
+  const seg = (A, B, pad) => { const dx = B[0] - A[0], dy = B[1] - A[1], l = Math.hypot(dx, dy), ux = dx / l, uy = dy / l; return [[A[0] + ux * pad, A[1] + uy * pad], [B[0] - ux * (pad + (directed ? 8 : 0)), B[1] - uy * (pad + (directed ? 8 : 0))], ux, uy]; };
+  const head = ([x, y], ux, uy, cls, k = '') => `<polygon ${k ? `data-k="${k}" opacity="0" ` : ''}points="${x + ux * 10},${y + uy * 10} ${x - ux * 8 - uy * 9},${y - uy * 8 + ux * 9} ${x - ux * 8 + uy * 9},${y - uy * 8 - ux * 9}" class="${cls}"/>`;
   let g = '';
   for (const [a, b, w] of edges) {
-    const A = pos[a], B = pos[b], hot = onRoute(a, b);
-    const cls = `e e-big${w < 0 ? ' e-neg' : ''}${hot ? ' e-route' : ''}`;
-    g += kind === 'bellman' ? arrow(A, B, cls, 42) : edge(A, B, cls);
-    const dx = B[0] - A[0], dy = B[1] - A[1], l = Math.hypot(dx, dy), ux = dx / l, uy = dy / l;
-    const off = kind === 'dijkstra' && a === 'B' && b === 'C' ? -26 : 30;
+    const [s, e, ux, uy] = seg(pos[a], pos[b], 40), neg = w < 0 ? ' e-neg' : '';
+    g += `<line x1="${s[0]}" y1="${s[1]}" x2="${e[0]}" y2="${e[1]}" class="e e-big"/>`;
+    if (directed) g += head(e, ux, uy, 'ex-head');
+    g += `<line data-k="h-${a}${b}" x1="${s[0]}" y1="${s[1]}" x2="${e[0]}" y2="${e[1]}" class="e ex-hot${neg}" opacity="0"/>`;
+    if (directed) g += head(e, ux, uy, 'ex-head-hot' + (w < 0 ? ' neg' : ''), `hh-${a}${b}`);
+    const A = pos[a], B = pos[b], off = kind === 'dijkstra' && a === 'B' && b === 'C' ? -26 : 30;
     const mx = (A[0] + B[0]) / 2 - uy * off, my = (A[1] + B[1]) / 2 + ux * off;
     const t = w < 0 ? '−' + (-w) : String(w), pw = 26 + t.length * 15;
-    g += `<g class="wpill${w < 0 ? ' wpill-neg' : ''}${hot ? ' wpill-hot' : ''}"><rect x="${mx - pw / 2}" y="${my - 21}" width="${pw}" height="42" rx="21"/><text x="${mx}" y="${my + 1}">${t}</text></g>`;
+    g += `<g data-k="w-${a}${b}" class="wpill${w < 0 ? ' wpill-neg' : ''}"><rect x="${mx - pw / 2}" y="${my - 21}" width="${pw}" height="42" rx="21"/><text x="${mx}" y="${my + 1}">${t}</text></g>`;
   }
-  for (const [n, x, y] of nodes) g += node([x, y], n, { key: n === route[0] || n === route[route.length - 1], r: 38, fs: 30 });
-  const note = kind === 'bellman' ? 'Panah menunjukkan arah sisi. Ungu menandai bobot negatif.' : 'Garis tebal menunjukkan jalur terpendek pada contoh materi.';
-  return `<figure class="example-graph">${svg(g, '0 0 600 400', 'ex-art')}<figcaption>${note}</figcaption></figure>`;
+  g += `<path data-k="route" d="${P(...route.map(k => pos[k]))}" fill="none" stroke="none"/>`;
+  g += `<g data-k="pk" opacity="0"><circle r="5" class="pk-trail" data-t="2"/><circle r="7" class="pk-trail" data-t="1"/><circle r="11" class="pk-head" data-t="0"/></g>`;
+  for (const [n, x, y] of nodes) g += `<circle data-k="r-${n}" cx="${x}" cy="${y}" r="38" class="ring-pulse" opacity="0"/>`;
+  for (const [n, x, y] of nodes) g += node([x, y], n, { r: 38, fs: 30 }) + `<g data-k="on-${n}" opacity="0">${node([x, y], n, { key: true, r: 38, fs: 30 })}</g>`;
+  for (const [k, v, dx, dy] of badges) {
+    const [x, y] = pos[k[0]], w = 34 + v.length * 14;
+    const fresh = (kind === 'bellman' && k === 'C2') || (kind === 'floyd' && k === 'C5');
+    g += `<g data-k="d-${k}" class="dbadge${fresh ? ' dbadge-new' : ''}" opacity="0" transform="translate(${x + dx} ${y + dy})"><rect x="${-w / 2}" y="-19" width="${w}" height="38" rx="19"/><text y="1">${v}</text></g>`;
+  }
+  const note = kind === 'bellman' ? 'Panah menunjukkan arah sisi. Ungu menandai bobot negatif.' : 'Angka bulat di samping node adalah jarak dari A.';
+  return `<figure class="example-graph">${`<svg xmlns="http://www.w3.org/2000/svg" viewBox="-20 -10 640 420" class="ex-art" data-scene="ex-${kind}" aria-hidden="true" focusable="false">${g}</svg>`}<figcaption>${note}</figcaption></figure>`;
 }
 
 export function floydMatrix() {
@@ -324,7 +354,7 @@ export function floydMatrix() {
     h += `<b>${L[i]}</b>`;
     row.forEach((v, j) => {
       const upd = (i === 0 && j === 2) || (i === 2 && j === 0);
-      h += upd ? `<span class="cell upd"><s>10</s><em>5</em></span>` : `<span class="cell${i === j ? ' dim' : ''}${i === 1 || j === 1 ? ' via' : ''}">${v}</span>`;
+      h += upd ? `<span class="cell upd"><i class="old">10</i><i class="new">5</i></span>` : `<span class="cell${i === j ? ' dim' : ''}${i === 1 || j === 1 ? ' via' : ''}">${v}</span>`;
     });
   });
   return h + '</div>';
