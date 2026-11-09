@@ -12,6 +12,9 @@ Presentasi web interaktif (20 slide) untuk Bab X Algoritma Routing.
 | F | Layar penuh |
 | T | Mode terang / gelap |
 | H | Sembunyikan dock |
+| M | Matikan / nyalakan animasi |
+
+Animasi selalu aktif secara default, juga di laptop Windows yang mematikan "Animation effects".
 
 Efek refraksi Liquid Glass tampil penuh di Chrome dan Edge.
 

@@ -427,10 +427,10 @@ td:first-child{font-weight:650;color:var(--ink);white-space:nowrap}
 
 /* ===== Accessibility ====================================================== */
 .sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
-@media (prefers-reduced-motion:reduce){
-  #wall .blob,.app-icon::after,.halo,.grad,.orbit-dash{animation:none}
-  :root{transition:none}
-}
+/* Motion is on by default (it is part of the talk). The dock's motion button, or the M key,
+   switches it off; the OS "reduce motion" setting no longer silently freezes the deck. */
+:root[data-motion="off"] :is(#wall .blob,.app-icon::after,.halo,.grad,.orbit-dash,.orb-icon,.orb::after,.ring-a,.ring-b){animation:none}
+:root[data-motion="off"]{transition:none}
 
 /* arrowheads never take the line stroke */
 .dia polygon,.ex-art polygon{stroke:none}
@@ -790,3 +790,6 @@ td:first-child{font-weight:650;color:var(--ink);white-space:nowrap}
 /* the rim flares with light while the glass forms */
 .lg-rim{position:absolute;inset:0;border-radius:inherit;opacity:0;
   box-shadow:inset 0 0 0 3px rgba(255,255,255,.95),inset 0 0 70px 8px color-mix(in srgb,var(--accent-2) 45%,transparent),inset 0 0 180px 12px rgba(255,255,255,.35)}
+.dbtn .mo-off{opacity:0;transition:opacity .25s ease}
+:root[data-motion="off"] .dbtn .mo-off{opacity:1}
+:root[data-motion="off"] .dbtn .mo-wave{opacity:.45}

@@ -8,7 +8,13 @@ const pill = dock.querySelector('.pill');
 const tip = document.querySelector('.tip');
 const live = document.getElementById('live');
 const wall = document.getElementById('wall');
-const reduce = matchMedia('(prefers-reduced-motion: reduce)');
+// Motion preference. Many Windows laptops report prefers-reduced-motion when "Animation effects"
+// is off, which used to freeze the whole deck there while phones animated. Motion now defaults to
+// on and the presenter decides with the dock button (or the M key); the choice is remembered.
+let motionPref = 'on';
+try { motionPref = localStorage.getItem('komdat-motion') || 'on'; } catch {}
+const reduce = { get matches() { return motionPref === 'off'; } };
+document.documentElement.dataset.motion = motionPref;
 let index = -1, scale = 1, busyOverview = false;
 
 // ---------- springs -----------------------------------------------------------
@@ -668,6 +674,7 @@ function scenesStart(slide, delay = 0) {
   if (!sceneRaf && !reduce.matches) sceneRaf = requestAnimationFrame(sceneLoop);
 }
 function sceneLoop(now) {
+  if (reduce.matches) { sceneRaf = 0; return; }   // motion switched off: leave the static frame
   let live = false;
   for (const s of scenes) {
     if (s.slide.hidden) continue;
@@ -865,6 +872,17 @@ ovGrid.addEventListener('click', e => { const t = e.target.closest('.thumb'); if
 
 // ---------- controls ------------------------------------------------------------------------
 function fullscreen() { if (document.fullscreenElement) document.exitFullscreen(); else document.documentElement.requestFullscreen?.(); }
+function setMotion(m) {
+  motionPref = m; root.dataset.motion = m;
+  try { localStorage.setItem('komdat-motion', m); } catch {}
+  const b = dock.querySelector('[data-action="motion"]');
+  if (b) { b.setAttribute('aria-pressed', String(m === 'on')); b.setAttribute('aria-label', m === 'on' ? 'Matikan animasi (M)' : 'Nyalakan animasi (M)'); }
+  if (index < 0) return;
+  const s = slides[index];
+  svgs(s, true);                              // pauses or resumes the slide's own loops
+  scenesStart(s);                             // restarts (or freezes) the live diagrams
+  lensRun(index === 0);
+}
 function setTheme(t) {
   root.dataset.theme = t;
   try { localStorage.setItem('komdat-theme', t); } catch {}
@@ -879,6 +897,7 @@ document.addEventListener('click', e => {
     case 'fullscreen': fullscreen(); break;
     case 'overview': openOverview(); break;
     case 'theme': setTheme(root.dataset.theme === 'dark' ? 'light' : 'dark'); break;
+    case 'motion': setMotion(motionPref === 'on' ? 'off' : 'on'); break;
   }
 });
 addEventListener('keydown', e => {
@@ -903,6 +922,7 @@ addEventListener('keydown', e => {
     case 'f': case 'F': fullscreen(); break;
     case 'g': case 'G': case 'Escape': openOverview(); break;
     case 't': case 'T': setTheme(root.dataset.theme === 'dark' ? 'light' : 'dark'); break;
+    case 'm': case 'M': setMotion(motionPref === 'on' ? 'off' : 'on'); break;
     case 'h': case 'H': stage.classList.toggle('dock-hidden'); break;
   }
 });
@@ -932,7 +952,7 @@ function wallNet() {
 (function boot() {
   let theme = 'light';
   try { theme = localStorage.getItem('komdat-theme') || (matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'); } catch {}
-  setTheme(theme);
+  setTheme(theme); setMotion(motionPref);
   wallNet(); fit(); setupLens();
   slides.forEach(s => { s.hidden = true; svgs(s, false); });
   go(Number(location.hash.slice(1)) - 1 || 0);
